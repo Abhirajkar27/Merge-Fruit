@@ -292,7 +292,7 @@ function checkCollisions(circles) {
 
 
                 // update score
-                score += circleA.level+1 * 10
+                score += (circleA.level+1) * 10
 
 
                 fruitsToRemove.push(circleA, circleB);

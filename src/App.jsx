@@ -13,7 +13,7 @@ const App = () => {
             <div id="maincol" className="col-md-6">
                 <nav className="navbar bg-body-tertiary" data-bs-theme="dark">
                     <div className="container-fluid">
-                        <a className="navbar-brand" href="#">Merge Fruit Replica</a>
+                        <a className="navbar-brand" href="#">Merge Fruit</a>
                     </div>
                 </nav>
                 <div id="canvasbox"></div>

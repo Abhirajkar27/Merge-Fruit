@@ -2,6 +2,7 @@
 
 
 const canvasBox = document.getElementById("canvasbox");
+let gameover = false;
 let fruitsdata = [
     {
         name: "cherry",
@@ -115,6 +116,13 @@ function preload() {
     fruitsdata[9].image = loadImage('assets/images/level9.png');
 
 }
+function displayGameOver() {
+    background("#EAC696"); // Clear the screen or show a different background
+    textAlign(CENTER, CENTER);
+    fill("#FF0000");
+    textSize(60);
+    text("Game Over", width / 2, height / 2);
+}
 
 function setup() {
     // Create a p5.js canvas inside the "canvasbox" div
@@ -143,6 +151,9 @@ function setup() {
 }
 
 function handleTouchStart(event) {
+    if(gameover){
+        return;
+    }
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     isTouching = true;
@@ -150,12 +161,18 @@ function handleTouchStart(event) {
 }
 
 function handleTouchMove(event) {
+    if(gameover){
+        return;
+    }
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     return false; // Prevent default behavior
 }
 
 function handleTouchEnd(event) {
+    if(gameover){
+        return;
+    }
     fruitinhand.isfixed = false;
     // Move fruit in hand to fruits array
     fruits.push(fruitinhand);
@@ -165,65 +182,81 @@ function handleTouchEnd(event) {
     return false; // Prevent default behavior
 }
 
-
 function draw() {
+    if (gameover) {
+        displayGameOver();
+        return; // Stop any further processing if the game is over
+    }
+
     background("#EAC696");
+    ground.display();
 
-    ground.display()
+    movehand();
 
-    movehand()
-    // display hand
-  
+    // Display hand
     ellipse(handpos[0], handpos[1], 10, 10);
 
-    // display fruit in hand
+    // Display fruit in hand
     if (fruitinhand) {
-        fruitinhand.display()
-        
+        fruitinhand.display();
     }
 
-    // display fruits in the game
+    // Display fruits in the game
     for (let index = 0; index < fruits.length; index++) {
-        fruits[index].display()
+        fruits[index].display();
     }
 
-    // check for collisions
+    // Check for collisions
     if (fruits.length >= 2) {
-        checkCollisions(fruits)
+        checkCollisions(fruits);
     }
 
-    // display score
-    displayscore()
-
-
-
-    // if fruits are getting closer draw the line
-    if (findObjectWithLowestY(fruits) < 200) {
-        // draw line
-        drawDashedLine()
-        
-    }
-
-    // if fruits are getting closer draw the line
-    if (findObjectWithLowestY(fruits) < 150) {
-        // console.log(fruits.length);
-
-        // gameover
-        // disable controls
-        // playing = false
-        // show gae over message
-
-    }
-
-
-
+    // Display score
+    displayscore();
+    drawDashedLine();
+    // Draw dashed line if fruits are close to the bottom
+    
 }
+
+
+let timer;
+let conditionTrueStartTime = null;
+
+function checkCondition() {
+    const lowestY = findObjectWithLowestY(fruits);
+    
+    // Check if the lowest fruit is near the bottom
+    if (lowestY < 180) {
+        if (conditionTrueStartTime === null) {
+            // Start the timer when the condition first becomes true
+            conditionTrueStartTime = Date.now();
+        }
+
+        // Calculate how long the condition has been true
+        const elapsedTime = Date.now() - conditionTrueStartTime;
+console.log(elapsedTime)
+        if (elapsedTime >= 3000) { // 3 seconds in milliseconds
+            gameover = true;
+            console.log("Game over!");
+            clearInterval(timer);
+            // Disable controls, show game over message, etc.
+        }
+    } else {
+        // Reset the timer if the condition becomes false
+        conditionTrueStartTime = null;
+    }
+}
+
+
+// Run checkCondition every 100ms (or adjust as needed)
+timer = setInterval(checkCondition, 10);
+
 let touchStartX = 0;
 let touchStartY = 0;
 let isTouching = false;
 
 function movehand() {
-    if (playing) {
+    if (playing && !gameover) {
         // Handle touch movement
         if (isTouching) {
             let touchX = touchStartX; // Default to start touch position if not updated
@@ -275,7 +308,7 @@ function checkCollisions(circles) {
             // Check if the circles have the same type and are colliding
             if (circleA.level === circleB.level && circleA.level < fruitsdata.length - 1 && Query.collides(circleA.body, [circleB.body]).length > 0) {
                 // Circles with the same type are touching each other
-                console.log(`Circles ${i} and ${j} with type ${circleA.level} are touching.`);
+                // console.log(`Circles ${i} and ${j} with type ${circleA.level} are touching.`);
 
                 // if two objects of the same level group are touching
 
@@ -374,7 +407,7 @@ function drawDashedLine() {
 function findObjectWithLowestY(fruits) {
     if (fruits.length === 0) {
         // Handle the case where the array is empty
-        return null;
+        return 300;
     }
 
     // Initialize with the first object in the array

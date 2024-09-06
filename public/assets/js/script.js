@@ -391,7 +391,7 @@ function drawDashedLine() {
 
     stroke("#D90631")
     strokeWeight(5)
-    const y = 180; // Y-coordinate of the dashed line
+    const y = 140; // Y-coordinate of the dashed line
     const dashLength = 20; // Length of each dash
     const gapLength = 20; // Length of each gap between dashes
     const lineLength = width; // Length of the entire line

@@ -3,6 +3,8 @@
 
 const canvasBox = document.getElementById("canvasbox");
 let gameover = false;
+let particles = [];
+
 let fruitsdata = [
     {
         name: "cherry",
@@ -91,6 +93,11 @@ var engine
 let leftWall;
 let rightWall;
 
+function createBlast(x, y) {
+    for (let i = 0; i < 20; i++) { // Number of particles
+        particles.push(new Particle(x, y));
+    }
+}
 
 var ground
 let fruitinhand
@@ -130,7 +137,7 @@ function setup() {
     canvas.parent("canvasbox"); // Attach the canvas to the div
 
     engine = Engine.create();
-
+    engine.world.gravity.y = 0.8;
     // Add ground and walls
     ground = new Ground(width / 2, height, 60, engine.world);
     leftWall = Matter.Bodies.rectangle(0, height / 2, 10, height, { isStatic: true });
@@ -173,9 +180,11 @@ function handleTouchEnd(event) {
     if(gameover){
         return;
     }
+    // console.log(fruitinhand);
     fruitinhand.isfixed = false;
     // Move fruit in hand to fruits array
     fruits.push(fruitinhand);
+    
     // Assign a new fruit in hand
     assignfruitinhand();
     isTouching = false;
@@ -197,10 +206,22 @@ function draw() {
     ellipse(handpos[0], handpos[1], 10, 10);
 
     // Display fruit in hand
-    if (fruitinhand) {
+    if (fruitinhand.isfixed) {
         fruitinhand.display();
-    }
 
+        // Draw vertical line from the fruit in hand to the ground
+        stroke("#FFFFFF"); // Set line color to white
+        strokeWeight(3);
+        const groundY = height - 160;
+        drawDashedLine2(handpos[0], handpos[1]+25, handpos[0], groundY); // Draw line from hand to bottom of canvas
+    }
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].display();
+        if (particles[i].lifetime <= 0) {
+            particles.splice(i, 1); // Remove dead particles
+        }
+    }
     // Display fruits in the game
     for (let index = 0; index < fruits.length; index++) {
         fruits[index].display();
@@ -214,9 +235,24 @@ function draw() {
     // Display score
     displayscore();
     drawDashedLine();
-    // Draw dashed line if fruits are close to the bottom
-    
 }
+function drawDashedLine2(x1, y1, x2, y2) {
+    const dashLength = 10; // Length of each dash
+    const gapLength = 5;   // Length of each gap between dashes
+
+    let lineLength = dist(x1, y1, x2, y2); // Total length of the line
+    let dashes = Math.floor(lineLength / (dashLength + gapLength)); // Number of dashes
+
+    for (let i = 0; i < dashes; i++) {
+        let startX = lerp(x1, x2, (i * (dashLength + gapLength)) / lineLength);
+        let startY = lerp(y1, y2, (i * (dashLength + gapLength)) / lineLength);
+        let endX = lerp(x1, x2, ((i * (dashLength + gapLength)) + dashLength) / lineLength);
+        let endY = lerp(y1, y2, ((i * (dashLength + gapLength)) + dashLength) / lineLength);
+
+        line(startX, startY, endX, endY);
+    }
+}
+
 
 
 let timer;
@@ -234,7 +270,7 @@ function checkCondition() {
 
         // Calculate how long the condition has been true
         const elapsedTime = Date.now() - conditionTrueStartTime;
-console.log(elapsedTime)
+// console.log(elapsedTime)
         if (elapsedTime >= 3000) { // 3 seconds in milliseconds
             gameover = true;
             console.log("Game over!");
@@ -286,13 +322,56 @@ function movehand() {
     }
 }
 
+function createFruit(x, y) {
+    // Define options with restitution for bounce
+    const options = {
+        restitution: 0.8, // Increase this value to make the fruit more bouncy
+        density: 0.001
+    };
+
+    // Create the fruit body
+    const fruit = Matter.Bodies.circle(x, y, 20, options);
+
+    // Add the fruit to the Matter.js world
+    Matter.Composite.add(engine.world, fruit);
+
+    return fruit;
+}
 
 function assignfruitinhand() {
     // choose a number beween 0 and 2
-    let rannum = floor(random(4))
+    let rannum = floor(random(3))
     //  console.log(rannum)
     fruitinhand = new Fruit(engine.world, rannum); 
 
+}
+// Function to push nearby fruits
+function pushNearbyFruits(mergedFruit) {
+    const pushForce = 10; // Adjust this value to control the force
+
+    // Loop through all fruits
+    for (let i = 0; i < fruits.length; i++) {
+        let fruit = fruits[i];
+
+        // Skip the merged fruit
+        if (fruit === mergedFruit) continue;
+
+        // Calculate distance between merged fruit and current fruit
+        let distance = dist(mergedFruit.body.position.x, mergedFruit.body.position.y,
+                            fruit.body.position.x, fruit.body.position.y);
+
+        // Apply force if within a certain range
+        if (distance < 100) { // Adjust range as needed
+            let angle = atan2(fruit.body.position.y - mergedFruit.body.position.y,
+                               fruit.body.position.x - mergedFruit.body.position.x);
+
+            // Apply force to push the neighboring fruit
+            Matter.Body.applyForce(fruit.body, fruit.body.position, {
+                x: pushForce * cos(angle),
+                y: pushForce * sin(angle)
+            });
+        }
+    }
 }
 
 
@@ -326,7 +405,10 @@ function checkCollisions(circles) {
 
                 // update score
                 score += (circleA.level+1) * 10
-
+                pushNearbyFruits(circleA);
+                pushNearbyFruits(circleB);
+                createBlast((fruits[i].body.position.x + fruits[j].body.position.x) / 2,
+                (fruits[i].body.position.y + fruits[j].body.position.y) / 2);
 
                 fruitsToRemove.push(circleA, circleB);
 

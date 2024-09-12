@@ -345,26 +345,32 @@ function assignfruitinhand() {
     fruitinhand = new Fruit(engine.world, rannum); 
 
 }
+let pushForce = null;
 // Function to push nearby fruits
 function pushNearbyFruits(mergedFruit) {
-    const pushForce = 10; // Adjust this value to control the force
+     // Adjust this value to control the force
+     for (let i = 0; i < fruits.length; i++) {
+        let fruit = fruits[i];
 
+        // Skip the merged fruit
+        if (fruit === mergedFruit){ pushForce=convertToRange(fruit.size); break;}
+     }
     // Loop through all fruits
     for (let i = 0; i < fruits.length; i++) {
         let fruit = fruits[i];
 
         // Skip the merged fruit
-        if (fruit === mergedFruit) continue;
+        if (fruit === mergedFruit){  continue;}
 
         // Calculate distance between merged fruit and current fruit
         let distance = dist(mergedFruit.body.position.x, mergedFruit.body.position.y,
                             fruit.body.position.x, fruit.body.position.y);
 
         // Apply force if within a certain range
-        if (distance < 100) { // Adjust range as needed
+        if (distance < 500) { // Adjust range as needed
             let angle = atan2(fruit.body.position.y - mergedFruit.body.position.y,
                                fruit.body.position.x - mergedFruit.body.position.x);
-
+console.log(pushForce)
             // Apply force to push the neighboring fruit
             Matter.Body.applyForce(fruit.body, fruit.body.position, {
                 x: pushForce * cos(angle),
@@ -467,7 +473,31 @@ function displayscore() {
     textAlign(LEFT, CENTER);
     text(score, 50, 70);
 }
-
+function convertToRange(input) {
+    if (input === 150) {
+        return 10;
+    } else if (input === 100) {
+        return 15;
+    } else if (input === 90) {
+        return 17;
+    } else if (input === 80) {
+        return 20;
+    } else if (input === 70) {
+        return 22;
+    } else if (input === 60) {
+        return 25;
+    } else if (input === 50) {
+        return 28;
+    } else if (input === 40) {
+        return 30;
+    } else if (input === 30) {
+        return 35;
+    } else if (input === 20) {
+        return 40;
+    } else {
+        return null; // Return null or a default value if the input doesn't match any of the specific cases
+    }
+}
 
 function drawDashedLine() {
 
